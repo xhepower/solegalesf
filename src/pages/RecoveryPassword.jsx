@@ -5,16 +5,11 @@ import logo from "@logos/logo_yard_sale.svg";
 import { authSchema } from "@schemas/auth.schema";
 import authService from "@services/auth.service";
 
-function Login() {
+function RecoveryPassword() {
   const [isLoading, setIsLoading] = useState(false);
-  const [token, setToken] = useState([]);
   const [errors, setErrors] = useState([]);
   const [firstTry, setFirstTry] = useState(true);
   const form = useRef(null);
-
-  const guardarToken = (token) => {
-    localStorage.setItem("token", token);
-  };
   const obtenerToken = () => {
     const token = localStorage.getItem("token")
       ? localStorage.getItem("token")
@@ -22,13 +17,12 @@ function Login() {
     return token;
   };
   const handleLogin = async (data) => {
-    const datos = { errors: null, token: null };
+    const datos = { errors: null };
     setIsLoading(true);
     try {
-      const rta = await authService.login(data);
-      datos.token = rta.data.token;
-      guardarToken(rta.data.token);
+      const rta = await authService.recoveryPassword(data);
       setIsLoading(false);
+      window.location.href = "/email-sent";
     } catch (error) {
       datos.errors = error.response.status;
       setIsLoading(false);
@@ -40,13 +34,10 @@ function Login() {
     const formData = new FormData(form.current);
     const data = {
       email: formData.get("email"),
-      password: formData.get("password"),
     };
     setFirstTry(false);
     const rta = await handleLogin(data);
     setErrors(rta.errors);
-    setToken(rta.token);
-    console.log(obtenerToken());
   };
   if (obtenerToken()) {
     window.location.href = "/";
@@ -60,7 +51,7 @@ function Login() {
       ) : null}
       {errors && !firstTry && !isLoading ? (
         <div className="error-container">
-          <p className="error-text">Error de autenticación</p>
+          <p className="errortext">Error de autenticación</p>
         </div>
       ) : null}
       <div className="Login-container">
@@ -76,27 +67,17 @@ function Login() {
             className="input input-email"
             required
           />
-          <label htmlFor="password" className="label">
-            Contraseña
-          </label>
-          <input
-            type="password"
-            name="password"
-            placeholder="*********"
-            className="input input-password"
-            required
-          />
+
           <input
             className="primary-button login-button"
             value="Entrar"
             type="submit"
             onClick={handleSubmit}
           ></input>
-          <a href="/recovery-password">Olvidé mi contraseña</a>
         </form>
       </div>
     </div>
   );
 }
 
-export default Login;
+export default RecoveryPassword;

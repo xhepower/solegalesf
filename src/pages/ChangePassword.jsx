@@ -1,20 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import "@styles/Login.scss";
 import logo from "@logos/logo_yard_sale.svg";
 import { authSchema } from "@schemas/auth.schema";
 import authService from "@services/auth.service";
 
-function Login() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [token, setToken] = useState([]);
+function ChangePassword() {
   const [errors, setErrors] = useState([]);
+  const [token, setToken] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [firstTry, setFirstTry] = useState(true);
   const form = useRef(null);
-
-  const guardarToken = (token) => {
-    localStorage.setItem("token", token);
-  };
   const obtenerToken = () => {
     const token = localStorage.getItem("token")
       ? localStorage.getItem("token")
@@ -22,12 +18,10 @@ function Login() {
     return token;
   };
   const handleLogin = async (data) => {
-    const datos = { errors: null, token: null };
-    setIsLoading(true);
+    const datos = { errors: null };
     try {
-      const rta = await authService.login(data);
-      datos.token = rta.data.token;
-      guardarToken(rta.data.token);
+      const rta = await authService.changePassword(data);
+      window.location.href = "/password-recovery";
       setIsLoading(false);
     } catch (error) {
       datos.errors = error.response.status;
@@ -38,15 +32,22 @@ function Login() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     const formData = new FormData(form.current);
-    const data = {
-      email: formData.get("email"),
-      password: formData.get("password"),
-    };
-    setFirstTry(false);
-    const rta = await handleLogin(data);
-    setErrors(rta.errors);
-    setToken(rta.token);
-    console.log(obtenerToken());
+    if (formData.get("password1") == formData.get("password2")) {
+      let elToken = new URLSearchParams(document.location.search).get("token");
+      const data = {
+        newPassword: formData.get("password1"),
+        token: elToken,
+      };
+      setFirstTry(false);
+      const rta = await handleLogin(data);
+      setErrors(rta.errors);
+    } else {
+      // const query = new URLSearchParams(useLocation().search);
+      //const token = query.get("token");
+
+      setFirstTry(false);
+      setErrors("Las contraseñas no coinciden");
+    }
   };
   if (obtenerToken()) {
     window.location.href = "/";
@@ -60,28 +61,31 @@ function Login() {
       ) : null}
       {errors && !firstTry && !isLoading ? (
         <div className="error-container">
-          <p className="error-text">Error de autenticación</p>
+          <p className="errortext">Error de autenticación</p>
+          {errors == "Las contraseñas no coinciden" ? (
+            <p className="errortext">Las contraseñas no coinciden</p>
+          ) : null}
         </div>
       ) : null}
       <div className="Login-container">
         <img src={logo} alt="logo" className="logo" />
         <form className="form" ref={form}>
-          <label htmlFor="email" className="label">
-            Correo eléctronico
-          </label>
-          <input
-            type="email"
-            name="email"
-            placeholder="Ingrese aquí su correo electrónico"
-            className="input input-email"
-            required
-          />
-          <label htmlFor="password" className="label">
+          <label htmlFor="password1" className="label">
             Contraseña
           </label>
           <input
             type="password"
-            name="password"
+            name="password2"
+            placeholder="*********"
+            className="input input-password"
+            required
+          />
+          <label htmlFor="password2" className="label">
+            Contraseña
+          </label>
+          <input
+            type="password"
+            name="password1"
             placeholder="*********"
             className="input input-password"
             required
@@ -92,11 +96,10 @@ function Login() {
             type="submit"
             onClick={handleSubmit}
           ></input>
-          <a href="/recovery-password">Olvidé mi contraseña</a>
         </form>
       </div>
     </div>
   );
 }
 
-export default Login;
+export default ChangePassword;

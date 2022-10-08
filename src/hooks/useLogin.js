@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const useLogin = (data) => {
+const useLogin = () => {
   const [token, setToken] = useState([]);
   useEffect(() => {
     authService.login(data).then((response) => {
